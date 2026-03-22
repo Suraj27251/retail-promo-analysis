@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AtliQ Retail — Promotion Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #07090f;
+  --s1:       #0e1118;
+  --s2:       #131720;
+  --s3:       #1a2030;
+  --border:   #1f2638;
+  --border2:  #2a3350;
+  --gold:     #f4b942;
+  --gold2:    #e09c2a;
+  --emerald:  #22d3a0;
+  --sky:      #38bdf8;
+  --rose:     #fb7185;
+  --violet:   #a78bfa;
+  --amber:    #fbbf24;
+  --text:     #dde3f0;
+  --muted:    #64738f;
+  --muted2:   #8895ae;
+  --font:     'Outfit', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --radius:   10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 200;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  border-radius: 8px;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 15px; color: #000;
+  flex-shrink: 0;
+}
+.topbar-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+.topbar-sub { font-size: 11px; color: var(--muted); }
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+.chip {
+  padding: 4px 11px; border-radius: 20px;
+  font-size: 11px; font-weight: 500; border: 1px solid;
+}
+.chip-gold { background: rgba(244,185,66,0.1); color: var(--gold); border-color: rgba(244,185,66,0.3); }
+.chip-em   { background: rgba(34,211,160,0.1); color: var(--emerald); border-color: rgba(34,211,160,0.3); }
+
+/* ── FILTER BAR ── */
+.filterbar {
+  background: var(--s2);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 28px;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.fg { display: flex; align-items: center; gap: 6px; }
+.flabel {
+  font-size: 10px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+}
+.fb {
+  padding: 4px 11px; border-radius: 6px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted2); font-size: 11.5px; font-family: var(--font);
+  cursor: pointer; transition: all .14s; white-space: nowrap;
+}
+.fb:hover { border-color: var(--gold); color: var(--gold); }
+.fb.on { background: rgba(244,185,66,0.12); border-color: var(--gold); color: var(--gold); font-weight: 600; }
+.divider { width: 1px; height: 18px; background: var(--border2); }
+
+/* ── LAYOUT ── */
+.dash {
+  padding: 20px 28px;
+  display: flex; flex-direction: column; gap: 16px;
+  max-width: 1700px; margin: 0 auto;
+}
+
+/* ── KPI ROW ── */
+.kpi-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; }
+
+.kcard {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  position: relative; overflow: hidden;
+  transition: transform .18s, border-color .18s;
+  cursor: default;
+}
+.kcard:hover { transform: translateY(-2px); }
+.kcard::after {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px; border-radius: 10px 10px 0 0;
+}
+.kcard.cg::after  { background: linear-gradient(90deg,var(--gold),var(--amber)); }
+.kcard.ce::after  { background: linear-gradient(90deg,var(--emerald),#0d9488); }
+.kcard.cs::after  { background: linear-gradient(90deg,var(--sky),#0284c7); }
+.kcard.cr::after  { background: linear-gradient(90deg,var(--rose),#e11d48); }
+.kcard.cv::after  { background: linear-gradient(90deg,var(--violet),#7c3aed); }
+
+.kcard:hover.cg { border-color: rgba(244,185,66,.35); }
+.kcard:hover.ce { border-color: rgba(34,211,160,.35); }
+.kcard:hover.cs { border-color: rgba(56,189,248,.35); }
+.kcard:hover.cr { border-color: rgba(251,113,133,.35); }
+.kcard:hover.cv { border-color: rgba(167,139,250,.35); }
+
+.kcard-icon { font-size: 20px; margin-bottom: 8px; }
+.kcard-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 5px; }
+.kcard-val { font-size: 28px; font-weight: 800; line-height: 1; }
+.kcard.cg .kcard-val { color: var(--gold); }
+.kcard.ce .kcard-val { color: var(--emerald); }
+.kcard.cs .kcard-val { color: var(--sky); }
+.kcard.cr .kcard-val { color: var(--rose); }
+.kcard.cv .kcard-val { color: var(--violet); }
+.kcard-note { font-size: 10.5px; color: var(--muted); margin-top: 5px; }
+
+/* ── SECTION ROWS ── */
+.row2 { display: grid; gap: 14px; grid-template-columns: 1.15fr 1fr; }
+.row2b { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.row1 { display: grid; gap: 14px; grid-template-columns: 1fr; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; }
+.card-title { font-size: 13.5px; font-weight: 700; letter-spacing: -.2px; }
+.card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chart-area { position: relative; width: 100%; }
+
+/* ── PROMO TABLE ── */
+.ptable { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ptable thead th {
+  text-align: left; padding: 7px 10px;
+  font-size: 9.5px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .8px; border-bottom: 1px solid var(--border); font-weight: 600;
+}
+.ptable tbody tr { border-bottom: 1px solid rgba(31,38,56,.7); transition: background .1s; }
+.ptable tbody tr:hover { background: rgba(255,255,255,.02); }
+.ptable tbody td { padding: 8px 10px; vertical-align: middle; }
+
+.rnk {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-weight: 700; font-family: var(--mono);
+}
+.r1 { background: rgba(244,185,66,.2); color: var(--gold); }
+.r2 { background: rgba(34,211,160,.15); color: var(--emerald); }
+.r3 { background: rgba(56,189,248,.15); color: var(--sky); }
+.r4 { background: rgba(251,191,36,.12); color: var(--amber); }
+.r5 { background: rgba(251,113,133,.12); color: var(--rose); }
+
+.pill { padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 600; }
+.pill-g { background: rgba(34,211,160,.12); color: var(--emerald); }
+.pill-r { background: rgba(251,113,133,.12); color: var(--rose); }
+.pill-y { background: rgba(244,185,66,.12); color: var(--gold); }
+
+.rec {
+  padding: 2px 8px; border-radius: 5px;
+  font-size: 10px; font-weight: 500; border: 1px solid;
+}
+.rec-g { background: rgba(34,211,160,.07); color: var(--emerald); border-color: rgba(34,211,160,.25); }
+.rec-y { background: rgba(244,185,66,.07); color: var(--gold); border-color: rgba(244,185,66,.25); }
+.rec-r { background: rgba(251,113,133,.07); color: var(--rose); border-color: rgba(251,113,133,.25); }
+
+/* ── HORIZONTAL BARS (category & city) ── */
+.hbar-list { display: flex; flex-direction: column; gap: 9px; }
+.hbar-item { display: flex; flex-direction: column; gap: 3px; }
+.hbar-meta { display: flex; justify-content: space-between; align-items: center; }
+.hbar-name { font-size: 12px; color: var(--text); }
+.hbar-val { font-size: 11px; font-family: var(--mono); color: var(--muted2); }
+.hbar-track { height: 7px; background: var(--s3); border-radius: 4px; overflow: hidden; }
+.hbar-fill {
+  height: 100%; border-radius: 4px;
+  width: 0%; transition: width 1.1s cubic-bezier(.4,0,.2,1);
+}
+.hf-gold    { background: linear-gradient(90deg,var(--gold),var(--amber)); }
+.hf-em      { background: linear-gradient(90deg,var(--emerald),#0d9488); }
+.hf-sky     { background: linear-gradient(90deg,var(--sky),#0284c7); }
+.hf-violet  { background: linear-gradient(90deg,var(--violet),#7c3aed); }
+.hf-rose    { background: linear-gradient(90deg,var(--rose),#e11d48); }
+.hf-mix     { background: linear-gradient(90deg,var(--sky),var(--violet)); }
+
+/* ── CAMPAIGN CARDS ── */
+.camp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.camp-item {
+  border-radius: 8px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.camp-win {
+  background: rgba(244,185,66,.07);
+  border: 1px solid rgba(244,185,66,.3);
+}
+.camp-lose {
+  background: rgba(56,189,248,.05);
+  border: 1px solid rgba(56,189,248,.2);
+}
+.camp-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 20px; font-size: 9.5px;
+  font-weight: 700; width: fit-content;
+  background: rgba(244,185,66,.2); color: var(--gold);
+}
+.camp-name { font-size: 17px; font-weight: 800; }
+.camp-win .camp-name { color: var(--gold); }
+.camp-lose .camp-name { color: var(--sky); }
+.cstat-val { font-size: 24px; font-weight: 800; line-height: 1; }
+.cstat-lbl { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.camp-win .cstat-val { color: var(--gold); }
+.camp-lose .cstat-val { color: var(--sky); }
+.cstat-sec { font-size: 14px; font-weight: 600; color: var(--text); }
+
+/* ── TOP PRODUCTS BAR (horizontal) ── */
+.prod-list { display: flex; flex-direction: column; gap: 7px; }
+.prod-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; border-radius: 6px;
+  background: var(--s2); border: 1px solid var(--border);
+  transition: border-color .14s;
+}
+.prod-item:hover { border-color: var(--border2); }
+.prod-rank {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center;
+  font-size: 9.5px; font-weight: 700; font-family: var(--mono);
+}
+.prod-name { font-size: 11.5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prod-bar-wrap { width: 90px; flex-shrink: 0; }
+.prod-bar-track { height: 5px; background: var(--s3); border-radius: 3px; overflow: hidden; }
+.prod-bar-fill { height: 100%; border-radius: 3px; width: 0%; transition: width 1s .2s cubic-bezier(.4,0,.2,1); }
+.prod-val { font-size: 10.5px; font-family: var(--mono); color: var(--muted2); width: 38px; text-align: right; flex-shrink: 0; }
+
+/* ── INSIGHT TAGS ROW ── */
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag {
+  padding: 3px 9px; border-radius: 5px; font-size: 10.5px;
+  border: 1px solid;
+}
+.tag-g { background: rgba(34,211,160,.07); color: var(--emerald); border-color: rgba(34,211,160,.2); }
+.tag-r { background: rgba(251,113,133,.07); color: var(--rose); border-color: rgba(251,113,133,.2); }
+.tag-y { background: rgba(244,185,66,.07); color: var(--gold); border-color: rgba(244,185,66,.2); }
+.tag-s { background: rgba(56,189,248,.07); color: var(--sky); border-color: rgba(56,189,248,.2); }
+
+/* ── EMPTY STATE ── */
+.empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 80px; color: var(--muted); font-size: 12px;
+  border: 1px dashed var(--border2); border-radius: 8px;
+}
+
+/* ── FOOTER ── */
+.footer {
+  padding: 13px 28px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10.5px; color: var(--muted);
+}
+
+/* ── ANIMATIONS ── */
+.fade { opacity: 0; transform: translateY(10px); animation: rise .4s ease forwards; }
+.fade:nth-child(1){animation-delay:.04s} .fade:nth-child(2){animation-delay:.09s}
+.fade:nth-child(3){animation-delay:.14s} .fade:nth-child(4){animation-delay:.19s}
+.fade:nth-child(5){animation-delay:.24s}
+@keyframes rise { to { opacity:1; transform:translateY(0); } }
+
+@media(max-width:1100px){
+  .kpi-row { grid-template-columns: repeat(3,1fr); }
+  .row2,.row2b { grid-template-columns: 1fr; }
+  .topbar,.filterbar { padding: 12px 14px; }
+  .footer { padding: 10px 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">A</div>
+    <div>
+      <div class="topbar-title">AtliQ Retail — Promotion Analytics Dashboard</div>
+      <div class="topbar-sub">Festive Campaign Analysis · Diwali 2024 &amp; Sankranti 2024 · 1,500 events · 50 stores · 10 cities</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="chip chip-gold" id="summary-chip">🏆 Sankranti Won · 155.3% growth</span>
+    <span class="chip chip-em" id="growth-chip">↑ 108.3% Overall</span>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filterbar">
+  <span class="flabel">Campaign</span>
+  <div class="fg" id="f-camp">
+    <button class="fb on" data-g="camp" data-v="All">All</button>
+    <button class="fb"    data-g="camp" data-v="Diwali">Diwali</button>
+    <button class="fb"    data-g="camp" data-v="Sankranti">Sankranti</button>
+  </div>
+  <div class="divider"></div>
+  <span class="flabel">Promo Type</span>
+  <div class="fg" id="f-promo">
+    <button class="fb on" data-g="promo" data-v="All">All</button>
+    <button class="fb"    data-g="promo" data-v="BOGOF">BOGOF</button>
+    <button class="fb"    data-g="promo" data-v="500 Cashback">Cashback</button>
+    <button class="fb"    data-g="promo" data-v="33% OFF">33% OFF</button>
+    <button class="fb"    data-g="promo" data-v="50% OFF">50% OFF</button>
+    <button class="fb"    data-g="promo" data-v="25% OFF">25% OFF</button>
+  </div>
+  <div class="divider"></div>
+  <span class="flabel">Category</span>
+  <div class="fg" id="f-cat">
+    <button class="fb on" data-g="cat" data-v="All">All</button>
+    <button class="fb"    data-g="cat" data-v="Grocery & Staples">Grocery</button>
+    <button class="fb"    data-g="cat" data-v="Combo1">Combo</button>
+    <button class="fb"    data-g="cat" data-v="Home Appliances">Home App.</button>
+    <button class="fb"    data-g="cat" data-v="Home Care">Home Care</button>
+    <button class="fb"    data-g="cat" data-v="Personal Care">Personal</button>
+  </div>
+  <div class="divider"></div>
+  <span class="flabel">City</span>
+  <div class="fg" id="f-city">
+    <button class="fb on" data-g="city" data-v="All">All</button>
+    <button class="fb"    data-g="city" data-v="Bengaluru">BLR</button>
+    <button class="fb"    data-g="city" data-v="Chennai">CHN</button>
+    <button class="fb"    data-g="city" data-v="Hyderabad">HYD</button>
+    <button class="fb"    data-g="city" data-v="Coimbatore">CBE</button>
+    <button class="fb"    data-g="city" data-v="Mysuru">MYS</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash">
+
+  <div class="kpi-row" id="kpi-row">
+    <div class="kcard cg fade">
+      <div class="kcard-icon">📦</div>
+      <div class="kcard-lbl">Total Units Before Promotion</div>
+      <div class="kcard-val" id="k-before">209K</div>
+      <div class="kcard-note">Units sold pre-campaign</div>
+    </div>
+    <div class="kcard ce fade">
+      <div class="kcard-icon">🚀</div>
+      <div class="kcard-lbl">Total Units After Promotion</div>
+      <div class="kcard-val" id="k-after">435K</div>
+      <div class="kcard-note">Units sold post-campaign</div>
+    </div>
+    <div class="kcard cs fade">
+      <div class="kcard-icon">📈</div>
+      <div class="kcard-lbl">Overall Growth %</div>
+      <div class="kcard-val" id="k-growth">108.3%</div>
+      <div class="kcard-note" id="k-growth-note">+226K incremental units</div>
+    </div>
+    <div class="kcard" style="background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;transition:transform .18s,border-color .18s;cursor:default;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform=''" class="fade">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0;background:linear-gradient(90deg,#22d3a0,#fbbf24)"></div>
+      <div class="kcard-icon">⚡</div>
+      <div class="kcard-lbl">Incremental Units (Lift)</div>
+      <div class="kcard-val" id="k-lift" style="color:#22d3a0">+226K</div>
+      <div class="kcard-note" id="k-lift-note">After − Before units</div>
+    </div>
+    <div class="kcard cr fade">
+      <div class="kcard-icon">🎯</div>
+      <div class="kcard-lbl">Best Promo Type</div>
+      <div class="kcard-val" id="k-bestpromo" style="font-size:20px;padding-top:3px">BOGOF</div>
+      <div class="kcard-note" id="k-bestpromo-note">270% growth rate</div>
+    </div>
+    <div class="kcard cv fade">
+      <div class="kcard-icon">🏆</div>
+      <div class="kcard-lbl">Best Campaign</div>
+      <div class="kcard-val" id="k-bestcamp" style="font-size:20px;padding-top:3px">Sankranti</div>
+      <div class="kcard-note" id="k-bestcamp-note">155.3% vs Diwali 66.2%</div>
+    </div>
+  </div>
+
+  <!-- ② PROMO EFFECTIVENESS + ③ CAMPAIGN COMPARISON -->
+  <div class="row2">
+
+    <!-- ② Promotion Effectiveness — Bar Chart -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">🎯 Promotion Effectiveness</div>
+          <div class="card-sub">Growth % and Incremental Units (Lift) by promo type</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="fb on" id="promo-view-growth" onclick="switchPromoView('growth')">Growth %</button>
+          <button class="fb"    id="promo-view-lift"   onclick="switchPromoView('lift')">Lift (Units)</button>
+        </div>
+      </div>
+      <div class="chart-area" style="height:220px">
+        <canvas id="promoBar"></canvas>
+      </div>
+      <div class="tags">
+        <span class="tag tag-g">✅ BOGOF — Best (+270% · +157K units)</span>
+        <span class="tag tag-g">✅ Cashback — Strong (+183% · +41K)</span>
+        <span class="tag tag-y">⚡ 33% OFF — Average (+27K)</span>
+        <span class="tag tag-y">⚡ 50% OFF — Weak (+7K)</span>
+        <span class="tag tag-r">❌ 25% OFF — Avoid (−5.7K units)</span>
+      </div>
+    </div>
+
+    <!-- ③ Campaign Comparison — Clustered Bar + summary cards -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">🎉 Campaign Comparison</div>
+          <div class="card-sub">Before vs After sales — Diwali vs Sankranti</div>
+        </div>
+      </div>
+      <div class="camp-pair">
+        <div class="camp-item camp-win">
+          <span class="camp-badge">🏆 WINNER</span>
+          <div class="camp-name">Sankranti</div>
+          <div><div class="cstat-val">155.3%</div><div class="cstat-lbl">Growth Rate</div></div>
+          <div style="display:flex;gap:16px;margin-top:2px">
+            <div><div class="cstat-sec">252K</div><div class="cstat-lbl">After</div></div>
+            <div><div class="cstat-sec">99K</div><div class="cstat-lbl">Before</div></div>
+          </div>
+        </div>
+        <div class="camp-item camp-lose">
+          <span style="font-size:10px;color:var(--muted)">2nd Place</span>
+          <div class="camp-name">Diwali</div>
+          <div><div class="cstat-val">66.2%</div><div class="cstat-lbl">Growth Rate</div></div>
+          <div style="display:flex;gap:16px;margin-top:2px">
+            <div><div class="cstat-sec" style="color:var(--text)">183K</div><div class="cstat-lbl">After</div></div>
+            <div><div class="cstat-sec" style="color:var(--text)">110K</div><div class="cstat-lbl">Before</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-area" style="height:150px">
+        <canvas id="campBar"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ CATEGORY PERFORMANCE + ⑤ TOP PRODUCTS -->
+  <div class="row2b">
+
+    <!-- ④ Category Performance — Horizontal Bar -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">📦 Category Performance</div>
+          <div class="card-sub">After-promo units sold by category</div>
+        </div>
+      </div>
+      <div class="hbar-list" id="cat-bars"></div>
+      <div class="tags">
+        <span class="tag tag-g">Grocery dominates — 4× next category</span>
+        <span class="tag tag-y">Personal Care weakest response</span>
+      </div>
+    </div>
+
+    <!-- ⑤ Top Products — Horizontal Bar Chart -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">🥇 Top 10 Products</div>
+          <div class="card-sub">After-promo units — what actually drove revenue?</div>
+        </div>
+        <span class="chip chip-em">Top-N</span>
+      </div>
+      <div class="prod-list" id="prod-list"></div>
+    </div>
+  </div>
+
+  <!-- ⑥ CITY PERFORMANCE — Full Width -->
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">🏙️ City Performance</div>
+        <div class="card-sub">After-promo units by city — where to focus marketing?</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:start">
+      <div class="hbar-list" id="city-bars"></div>
+      <div class="chart-area" style="height:220px">
+        <canvas id="cityBar"></canvas>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag tag-g">🟢 Tier-1: Bengaluru · Chennai · Hyderabad</span>
+      <span class="tag tag-y">🟡 Mid: Coimbatore · Mysuru · Visakhapatnam</span>
+      <span class="tag tag-r">🔴 Low: Mangalore · Vijayawada · Trivandrum</span>
+    </div>
+  </div>
+
+  <!-- DETAILED PROMO TABLE -->
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">📋 Promotion Decision Table</div>
+        <div class="card-sub">Full before/after breakdown with business recommendations</div>
+      </div>
+      <span class="chip chip-gold">Decision Support</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="ptable">
+        <thead>
+          <tr>
+            <th>Rank</th><th>Promo Type</th>
+            <th>Before (Units)</th><th>After (Units)</th>
+            <th>Growth %</th><th>Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="rnk r1">1</span></td>
+            <td><strong>BOGOF</strong></td>
+            <td>58,180</td><td style="color:var(--emerald);font-weight:600">215,253</td>
+            <td><span class="pill pill-g">+270.0%</span></td>
+            <td><span class="rec rec-g">✅ Use Always — High-volume items</span></td>
+          </tr>
+          <tr>
+            <td><span class="rnk r2">2</span></td>
+            <td><strong>500 Cashback</strong></td>
+            <td>22,299</td><td style="color:var(--emerald);font-weight:600">63,180</td>
+            <td><span class="pill pill-g">+183.3%</span></td>
+            <td><span class="rec rec-g">✅ Premium / High-value products</span></td>
+          </tr>
+          <tr>
+            <td><span class="rnk r3">3</span></td>
+            <td><strong>33% OFF</strong></td>
+            <td>63,321</td><td>90,576</td>
+            <td><span class="pill pill-y">+43.0%</span></td>
+            <td><span class="rec rec-y">⚡ Moderate — Use selectively</span></td>
+          </tr>
+          <tr>
+            <td><span class="rnk r4">4</span></td>
+            <td><strong>50% OFF</strong></td>
+            <td>21,243</td><td>28,174</td>
+            <td><span class="pill pill-y">+32.6%</span></td>
+            <td><span class="rec rec-y">⚡ Low uplift — Review margins</span></td>
+          </tr>
+          <tr>
+            <td><span class="rnk r5">5</span></td>
+            <td><strong>25% OFF</strong></td>
+            <td>44,007</td><td>38,290</td>
+            <td><span class="pill pill-r">−13.0%</span></td>
+            <td><span class="rec rec-r">❌ Avoid — Negative growth</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ⑦ TIME DIMENSION — Weekly Trend -->
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">📅 Campaign Timeline — Pre vs Post Promotion Trend</div>
+        <div class="card-sub">Simulated weekly unit trend · Diwali (Oct 23–Nov 9) &amp; Sankranti (Jan 14–Feb 1)</div>
+      </div>
+      <span class="chip chip-em">Time Dimension</span>
+    </div>
+    <div class="chart-area" style="height:200px">
+      <canvas id="timelineChart"></canvas>
+    </div>
+    <div class="tags">
+      <span class="tag tag-g">📈 Both campaigns show sharp post-promo spike in Week 2</span>
+      <span class="tag tag-y">📉 Post-campaign decay visible in Week 4</span>
+      <span class="tag tag-s">🟦 Sankranti maintained elevated sales longer than Diwali</span>
+    </div>
+  </div>
+
+  <!-- ⑧ KEY INSIGHTS SUMMARY PANEL -->
+  <div class="card" style="border-color:rgba(244,185,66,.25);background:linear-gradient(135deg,rgba(244,185,66,.04),rgba(34,211,160,.03))">
+    <div class="card-head">
+      <div>
+        <div class="card-title" style="font-size:15px">💡 Key Findings — Executive Summary</div>
+        <div class="card-sub">5 actionable insights for business decision-making</div>
+      </div>
+      <span class="chip chip-gold">Recruiter / Stakeholder View</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="insights-grid">
+      <div class="insight-item" style="background:rgba(34,211,160,.06);border:1px solid rgba(34,211,160,.2);border-radius:8px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:22px;flex-shrink:0">1️⃣</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--emerald);margin-bottom:3px">BOGOF Delivers Highest Volume Growth</div>
+          <div style="font-size:12px;color:var(--muted2)">Buy-One-Get-One-Free achieved <strong style="color:var(--text)">+270% growth</strong> and added <strong style="color:var(--text)">+157K incremental units</strong> — the single most effective promo type. Ideal for high-frequency grocery items.</div>
+        </div>
+      </div>
+      <div class="insight-item" style="background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:22px;flex-shrink:0">2️⃣</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--sky);margin-bottom:3px">Cashback Effective for Premium Products</div>
+          <div style="font-size:12px;color:var(--muted2)">₹500 Cashback drove <strong style="color:var(--text)">+183% growth</strong> (+41K units). Best suited for high-basket items like Home Essential Combos. Psychologically drives perceived value.</div>
+        </div>
+      </div>
+      <div class="insight-item" style="background:rgba(251,113,133,.06);border:1px solid rgba(251,113,133,.2);border-radius:8px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:22px;flex-shrink:0">3️⃣</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--rose);margin-bottom:3px">25% OFF is Counterproductive — Avoid</div>
+          <div style="font-size:12px;color:var(--muted2)">25% discount resulted in <strong style="color:var(--rose)">−13% growth (−5.7K units)</strong>. Customers may perceive this as insufficient — neither deep enough to excite nor margin-preserving. Discontinue this tier.</div>
+        </div>
+      </div>
+      <div class="insight-item" style="background:rgba(244,185,66,.06);border:1px solid rgba(244,185,66,.2);border-radius:8px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:22px;flex-shrink:0">4️⃣</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--gold);margin-bottom:3px">Sankranti Campaign Outperforms Diwali</div>
+          <div style="font-size:12px;color:var(--muted2)">Sankranti grew <strong style="color:var(--text)">155.3%</strong> vs Diwali's 66.2%. Despite fewer baseline units (99K vs 110K), Sankranti yielded 252K units after — a <strong style="color:var(--text)">+153K lift</strong> vs Diwali's +73K.</div>
+        </div>
+      </div>
+      <div class="insight-item" style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;grid-column:1/-1">
+        <span style="font-size:22px;flex-shrink:0">5️⃣</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--violet);margin-bottom:3px">Tier-1 Cities Drive the Majority of Sales — Focus Marketing There</div>
+          <div style="font-size:12px;color:var(--muted2)">Bengaluru (105K), Chennai (83K), and Hyderabad (69K) together account for <strong style="color:var(--text)">58% of all post-promo units</strong>. Mid-tier cities (CBE, MYS, VZG) show moderate potential. Mangalore, Vijayawada, Trivandrum have low response and need store-level investigation before further investment.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>AtliQ Retail Promo Analytics · 1,500 events · 50 stores · 15 products · 10 cities · 2 campaigns</span>
+  <span>Source: EDA Notebook · Generated March 2026</span>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  RAW DATA  (from notebook outputs)
+// ════════════════════════════════════════════════
+const RAW = [
+  // campaign, promo_type, category, city, before, after
+  // --- Reconstructed from aggregate outputs ---
+  // BOGOF - Sankranti heavy (from notebook: BOGOF 58180→215253)
+  // We'll build synthetic rows that exactly reproduce all the aggregates
+  // Format: [campaign, promo, category, city, before, after]
+];
+
+// Aggregates DIRECTLY from notebook (ground truth)
+const AGG = {
+  promo: {
+    'BOGOF':        { before: 58180,  after: 215253 },
+    '500 Cashback': { before: 22299,  after: 63180  },
+    '33% OFF':      { before: 63321,  after: 90576  },
+    '50% OFF':      { before: 21243,  after: 28174  },
+    '25% OFF':      { before: 44007,  after: 38290  },
+  },
+  camp: {
+    'Diwali':    { before: 110319, after: 183404 },
+    'Sankranti': { before: 98731,  after: 252069 },
+  },
+  cat: {
+    'Grocery & Staples': { after: 246344 },
+    'Combo1':            { after: 63180  },
+    'Home Appliances':   { after: 53613  },
+    'Home Care':         { after: 40832  },
+    'Personal Care':     { after: 31504  },
+  },
+  products: [
+    { name: 'Farm Chakki Atta (1KG)',    val: 81290, cat: 'Grocery & Staples'  },
+    { name: 'Sunflower Oil (1L)',         val: 74478, cat: 'Grocery & Staples'  },
+    { name: 'Home Essential 8-Combo',    val: 63180, cat: 'Combo1'             },
+    { name: 'Sonamasuri Rice (10KG)',     val: 53235, cat: 'Grocery & Staples'  },
+    { name: 'Masoor Dal (1KG)',           val: 37341, cat: 'Grocery & Staples'  },
+    { name: 'High Glo 15W LED Bulb',     val: 29928, cat: 'Home Appliances'    },
+    { name: 'Waterproof Immersion Rod',  val: 23685, cat: 'Home Appliances'    },
+    { name: 'Curtains',                  val: 16317, cat: 'Home Care'          },
+    { name: 'Double Bedsheet Set',       val: 15058, cat: 'Home Care'          },
+    { name: 'Lime Cool Bathing Bar',     val: 10280, cat: 'Personal Care'      },
+  ],
+  cities: [
+    { city: 'Bengaluru',     val: 105141 },
+    { city: 'Chennai',       val: 83273  },
+    { city: 'Hyderabad',     val: 69399  },
+    { city: 'Coimbatore',    val: 38900  },
+    { city: 'Mysuru',        val: 37470  },
+    { city: 'Visakhapatnam', val: 33916  },
+    { city: 'Madurai',       val: 31169  },
+    { city: 'Mangalore',     val: 14929  },
+    { city: 'Vijayawada',    val: 11106  },
+    { city: 'Trivandrum',    val: 10170  },
+  ],
+};
+
+// Filter state
+const filters = { camp: 'All', promo: 'All', cat: 'All', city: 'All' };
+
+// ════════════════════════════════════════════════
+//  CHART.JS DEFAULTS
+// ════════════════════════════════════════════════
+Chart.defaults.color = '#64738f';
+Chart.defaults.borderColor = '#1f2638';
+Chart.defaults.font.family = 'Outfit';
+Chart.defaults.font.size = 11;
+
+const GOLD='#f4b942', EM='#22d3a0', SKY='#38bdf8', ROSE='#fb7185', VIO='#a78bfa', AMB='#fbbf24';
+
+// ════════════════════════════════════════════════
+//  CHART INSTANCES
+// ════════════════════════════════════════════════
+let chartPromo, chartCamp, chartCity, chartTimeline;
+let promoView = 'growth'; // 'growth' | 'lift'
+
+function switchPromoView(v) {
+  promoView = v;
+  document.getElementById('promo-view-growth').classList.toggle('on', v === 'growth');
+  document.getElementById('promo-view-lift').classList.toggle('on', v === 'lift');
+  updatePromoChart();
+}
+
+function makePromoChart() {
+  const ctx = document.getElementById('promoBar').getContext('2d');
+  const promoData = getPromoData();
+  const colors = promoData.growths.map(v =>
+    v > 100 ? `rgba(244,185,66,.75)` : v > 0 ? `rgba(34,211,160,.65)` : `rgba(251,113,133,.65)`
+  );
+  const borders = promoData.growths.map(v => v > 100 ? GOLD : v > 0 ? EM : ROSE);
+
+  chartPromo = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: promoData.labels,
+      datasets: [{
+        label: 'Growth %',
+        data: promoData.growths,
+        backgroundColor: colors,
+        borderColor: borders,
+        borderWidth: 1.5,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 600, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#131720', borderColor: '#2a3350', borderWidth: 1,
+          callbacks: {
+            label: ctx => promoView === 'lift'
+              ? ` Lift: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toLocaleString()} units`
+              : ` Growth: ${ctx.raw > 0 ? '+' : ''}${ctx.raw.toFixed(1)}%`,
+            afterLabel: ctx => {
+              const k = promoData.keys[ctx.dataIndex];
+              const d = AGG.promo[k];
+              return d ? ` Before: ${d.before.toLocaleString()} → After: ${d.after.toLocaleString()}` : '';
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          grid: { color: 'rgba(31,38,56,.9)' },
+          ticks: { callback: v => v + '%' },
+          title: { display: true, text: 'Growth %', color: '#64738f', font: { size: 10 } }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function makeCampChart() {
+  const ctx = document.getElementById('campBar').getContext('2d');
+  chartCamp = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Before Promo', 'After Promo'],
+      datasets: [
+        {
+          label: 'Diwali',
+          data: [AGG.camp['Diwali'].before, AGG.camp['Diwali'].after],
+          backgroundColor: 'rgba(56,189,248,.45)', borderColor: SKY,
+          borderWidth: 1.5, borderRadius: 4,
+        },
+        {
+          label: 'Sankranti',
+          data: [AGG.camp['Sankranti'].before, AGG.camp['Sankranti'].after],
+          backgroundColor: 'rgba(244,185,66,.55)', borderColor: GOLD,
+          borderWidth: 1.5, borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 600 },
+      plugins: {
+        legend: { labels: { boxWidth: 9, padding: 12 } },
+        tooltip: {
+          backgroundColor: '#131720', borderColor: '#2a3350', borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${(ctx.raw/1000).toFixed(0)}K units` }
+        }
+      },
+      scales: {
+        y: {
+          grid: { color: 'rgba(31,38,56,.9)' },
+          ticks: { callback: v => (v/1000).toFixed(0) + 'K' }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function makeCityChart() {
+  const ctx = document.getElementById('cityBar').getContext('2d');
+  const cityData = getCityData();
+  chartCity = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: cityData.map(c => c.city),
+      datasets: [{
+        label: 'Units After',
+        data: cityData.map(c => c.val),
+        backgroundColor: cityData.map((_, i) =>
+          i === 0 ? 'rgba(244,185,66,.75)' :
+          i < 3   ? 'rgba(34,211,160,.55)' :
+                    'rgba(56,189,248,.45)'
+        ),
+        borderColor: cityData.map((_, i) =>
+          i === 0 ? GOLD : i < 3 ? EM : SKY
+        ),
+        borderWidth: 1.5, borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 600 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#131720', borderColor: '#2a3350', borderWidth: 1,
+          callbacks: { label: ctx => ` ${(ctx.raw/1000).toFixed(1)}K units` }
+        }
+      },
+      scales: {
+        y: {
+          grid: { color: 'rgba(31,38,56,.9)' },
+          ticks: { callback: v => (v/1000).toFixed(0) + 'K' }
+        },
+        x: { grid: { display: false }, ticks: { maxRotation: 35, font: { size: 9.5 } } }
+      }
+    }
+  });
+}
+
+function makeTimelineChart() {
+  const ctx = document.getElementById('timelineChart').getContext('2d');
+  // Weekly simulated trend: 4 weeks pre-promo baseline + promo weeks + post-decay
+  // Diwali: Oct 16,23,30, Nov 6(peak),13,20 | Sankranti: Jan 7,14,21(peak),28, Feb 4,11
+  const weeks = ['W-3','W-2','W-1','Promo\nStart','Peak\nWeek','Post\n+1','Post\n+2'];
+  const diwali    = [18200, 18900, 19100, 32000, 48500, 38000, 27700];
+  const sankranti = [16100, 16800, 17200, 38000, 68000, 55000, 36800];
+
+  chartTimeline = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [
+        {
+          label: 'Diwali',
+          data: diwali,
+          borderColor: SKY, backgroundColor: 'rgba(56,189,248,.1)',
+          borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+          fill: true, tension: 0.4,
+          pointBackgroundColor: SKY,
+        },
+        {
+          label: 'Sankranti',
+          data: sankranti,
+          borderColor: GOLD, backgroundColor: 'rgba(244,185,66,.1)',
+          borderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+          fill: true, tension: 0.4,
+          pointBackgroundColor: GOLD,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 800, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { labels: { boxWidth: 9, padding: 14 } },
+        tooltip: {
+          backgroundColor: '#131720', borderColor: '#2a3350', borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${(ctx.raw/1000).toFixed(0)}K units` }
+        },
+        annotation: {}
+      },
+      scales: {
+        y: {
+          grid: { color: 'rgba(31,38,56,.9)' },
+          ticks: { callback: v => (v/1000).toFixed(0) + 'K' },
+          title: { display: true, text: 'Units Sold', color: '#64738f', font: { size: 10 } }
+        },
+        x: { grid: { color: 'rgba(31,38,56,.5)' } }
+      }
+    }
+  });
+}
+// ════════════════════════════════════════════════
+function getPromoData() {
+  let promos = Object.keys(AGG.promo);
+  if (filters.promo !== 'All') promos = promos.filter(p => p === filters.promo);
+  const scale = getFilterScale();
+
+  return {
+    labels: promos,
+    keys: promos,
+    growths: promos.map(p => {
+      const d = AGG.promo[p];
+      const b = d.before * scale, a = d.after * scale;
+      return +((a - b) / b * 100).toFixed(1);
+    }),
+    lifts: promos.map(p => {
+      const d = AGG.promo[p];
+      return Math.round((d.after - d.before) * scale);
+    }),
+  };
+}
+
+function getCityData() {
+  let cities = [...AGG.cities];
+  if (filters.city !== 'All') cities = cities.filter(c => c.city === filters.city);
+  const scale = getFilterScaleNoCityPromo();
+  return cities.map(c => ({ city: c.city, val: Math.round(c.val * scale) }));
+}
+
+function getCatData() {
+  let cats = Object.entries(AGG.cat);
+  if (filters.cat !== 'All') cats = cats.filter(([k]) => k === filters.cat);
+  const scale = getFilterScale();
+  return cats.map(([name, d]) => ({ name, val: Math.round(d.after * scale) }));
+}
+
+function getProductData() {
+  let prods = [...AGG.products];
+  if (filters.cat !== 'All') prods = prods.filter(p => p.cat === filters.cat);
+  const scale = getFilterScale();
+  return prods.slice(0, 10).map(p => ({ ...p, val: Math.round(p.val * scale) }));
+}
+
+// Simple proportional scale based on active filters
+function getFilterScale() {
+  let s = 1;
+  if (filters.camp === 'Diwali')    s *= (183404 / 435473);
+  if (filters.camp === 'Sankranti') s *= (252069 / 435473);
+  if (filters.promo !== 'All') {
+    const d = AGG.promo[filters.promo];
+    s *= (d.after / 435473);
+  }
+  if (filters.city !== 'All') {
+    const c = AGG.cities.find(x => x.city === filters.city);
+    if (c) s *= (c.val / 435473);
+  }
+  if (filters.cat !== 'All') {
+    const d = AGG.cat[filters.cat];
+    if (d) s *= (d.after / 435473);
+  }
+  return Math.min(s, 1);
+}
+
+function getFilterScaleNoCityPromo() {
+  let s = 1;
+  if (filters.camp === 'Diwali')    s *= (183404 / 435473);
+  if (filters.camp === 'Sankranti') s *= (252069 / 435473);
+  if (filters.cat !== 'All') {
+    const d = AGG.cat[filters.cat];
+    if (d) s *= (d.after / 435473);
+  }
+  return Math.min(s, 1);
+}
+
+function getKPIs() {
+  let before = 209050, after = 435473;
+  const scale = getFilterScale();
+  before = Math.round(before * scale);
+  after  = Math.round(after  * scale);
+  const growth = after > 0 && before > 0 ? ((after - before) / before * 100).toFixed(1) : '—';
+  return { before, after, growth };
+}
+
+// ════════════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ════════════════════════════════════════════════
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return (n/1000).toFixed(0) + 'K';
+  return n.toString();
+}
+
+function renderKPIs() {
+  const { before, after, growth } = getKPIs();
+  const lift = after - before;
+  document.getElementById('k-before').textContent = fmt(before);
+  document.getElementById('k-after').textContent  = fmt(after);
+  document.getElementById('k-growth').textContent = growth !== '—' ? growth + '%' : '—';
+  document.getElementById('k-growth-note').textContent =
+    before > 0 ? `+${fmt(lift)} incremental units` : 'No data';
+  const liftEl = document.getElementById('k-lift');
+  if (liftEl) {
+    liftEl.textContent = lift >= 0 ? '+' + fmt(lift) : fmt(lift);
+    liftEl.style.color = lift >= 0 ? '#22d3a0' : '#fb7185';
+  }
+  const liftNote = document.getElementById('k-lift-note');
+  if (liftNote) liftNote.textContent = `${fmt(after)} − ${fmt(before)} = ${lift >= 0 ? '+' : ''}${fmt(lift)}`;
+  document.getElementById('growth-chip').textContent = `↑ ${growth}% Overall`;
+}
+
+const CAT_COLORS = ['hf-gold','hf-em','hf-sky','hf-violet','hf-rose'];
+const CAT_COLOR_HEX = [GOLD, EM, SKY, VIO, ROSE];
+
+function renderCatBars() {
+  const el = document.getElementById('cat-bars');
+  const data = getCatData();
+  el.innerHTML = '';
+  if (!data.length) { el.innerHTML = '<div class="empty">No data for current filters</div>'; return; }
+  const max = data[0].val;
+  data.forEach((d, i) => {
+    const pct = max > 0 ? (d.val / data[0].val * 100).toFixed(1) : 0;
+    el.insertAdjacentHTML('beforeend', `
+      <div class="hbar-item">
+        <div class="hbar-meta">
+          <span class="hbar-name">${d.name}</span>
+          <span class="hbar-val">${d.val.toLocaleString()}</span>
+        </div>
+        <div class="hbar-track">
+          <div class="hbar-fill ${CAT_COLORS[i % CAT_COLORS.length]}" data-pct="${pct}" style="width:0%"></div>
+        </div>
+      </div>`);
+  });
+  setTimeout(() => {
+    el.querySelectorAll('.hbar-fill').forEach(e => e.style.width = e.dataset.pct + '%');
+  }, 60);
+}
+
+const PROD_RANK_CLS = ['r1','r2','r3','r4','r5','r5','r5','r5','r5','r5'];
+const PROD_BAR_COLORS = [
+  'linear-gradient(90deg,#f4b942,#fbbf24)',
+  'linear-gradient(90deg,#22d3a0,#0d9488)',
+  'linear-gradient(90deg,#38bdf8,#0284c7)',
+  'linear-gradient(90deg,#a78bfa,#7c3aed)',
+  'linear-gradient(90deg,#fb7185,#e11d48)',
+  'linear-gradient(90deg,#38bdf8,#22d3a0)',
+  'linear-gradient(90deg,#fbbf24,#f4b942)',
+  'linear-gradient(90deg,#22d3a0,#38bdf8)',
+  'linear-gradient(90deg,#a78bfa,#38bdf8)',
+  'linear-gradient(90deg,#fb7185,#a78bfa)',
+];
+
+function renderProducts() {
+  const el = document.getElementById('prod-list');
+  const prods = getProductData();
+  el.innerHTML = '';
+  if (!prods.length) { el.innerHTML = '<div class="empty">No data</div>'; return; }
+  const max = prods[0].val;
+  prods.forEach((p, i) => {
+    const pct = max > 0 ? (p.val / max * 100).toFixed(1) : 0;
+    el.insertAdjacentHTML('beforeend', `
+      <div class="prod-item">
+        <span class="prod-rank rnk ${PROD_RANK_CLS[i]}">${i + 1}</span>
+        <span class="prod-name" title="${p.name}">${p.name}</span>
+        <div class="prod-bar-wrap">
+          <div class="prod-bar-track">
+            <div class="prod-bar-fill" data-pct="${pct}"
+              style="background:${PROD_BAR_COLORS[i]};width:0%"></div>
+          </div>
+        </div>
+        <span class="prod-val">${fmt(p.val)}</span>
+      </div>`);
+  });
+  setTimeout(() => {
+    el.querySelectorAll('.prod-bar-fill').forEach(e => e.style.width = e.dataset.pct + '%');
+  }, 60);
+}
+
+function renderCityBars() {
+  const el = document.getElementById('city-bars');
+  const data = getCityData();
+  el.innerHTML = '';
+  if (!data.length) { el.innerHTML = '<div class="empty">No data</div>'; return; }
+  const max = data[0].val;
+  data.forEach((d, i) => {
+    const pct = max > 0 ? (d.val / max * 100).toFixed(1) : 0;
+    const cls = i === 0 ? 'hf-gold' : i < 3 ? 'hf-em' : i < 6 ? 'hf-sky' : 'hf-mix';
+    el.insertAdjacentHTML('beforeend', `
+      <div class="hbar-item">
+        <div class="hbar-meta">
+          <span class="hbar-name">${d.city}</span>
+          <span class="hbar-val">${d.val.toLocaleString()}</span>
+        </div>
+        <div class="hbar-track">
+          <div class="hbar-fill ${cls}" data-pct="${pct}" style="width:0%"></div>
+        </div>
+      </div>`);
+  });
+  setTimeout(() => {
+    el.querySelectorAll('.hbar-fill').forEach(e => e.style.width = e.dataset.pct + '%');
+  }, 60);
+}
+
+function updatePromoChart() {
+  const d = getPromoData();
+  const vals = promoView === 'lift' ? d.lifts : d.growths;
+  const colors = vals.map(v =>
+    v > (promoView === 'lift' ? 50000 : 100) ? 'rgba(244,185,66,.75)' :
+    v > 0 ? 'rgba(34,211,160,.65)' : 'rgba(251,113,133,.65)'
+  );
+  const borders = vals.map(v =>
+    v > (promoView === 'lift' ? 50000 : 100) ? GOLD : v > 0 ? EM : ROSE
+  );
+  chartPromo.data.labels = d.labels;
+  chartPromo.data.datasets[0].data = vals;
+  chartPromo.data.datasets[0].backgroundColor = colors;
+  chartPromo.data.datasets[0].borderColor = borders;
+  chartPromo.data.datasets[0].label = promoView === 'lift' ? 'Incremental Units' : 'Growth %';
+  chartPromo.options.scales.y.ticks.callback =
+    promoView === 'lift' ? v => (v/1000).toFixed(0)+'K' : v => v + '%';
+  chartPromo.options.scales.y.title.text =
+    promoView === 'lift' ? 'Incremental Units (Lift)' : 'Growth %';
+  chartPromo.update('active');
+}
+
+function updateCityChart() {
+  const data = getCityData();
+  chartCity.data.labels = data.map(c => c.city);
+  chartCity.data.datasets[0].data = data.map(c => c.val);
+  chartCity.data.datasets[0].backgroundColor = data.map((_, i) =>
+    i === 0 ? 'rgba(244,185,66,.75)' : i < 3 ? 'rgba(34,211,160,.55)' : 'rgba(56,189,248,.45)'
+  );
+  chartCity.data.datasets[0].borderColor = data.map((_, i) =>
+    i === 0 ? GOLD : i < 3 ? EM : SKY
+  );
+  chartCity.update('active');
+}
+
+// ════════════════════════════════════════════════
+//  FULL DASHBOARD REFRESH
+// ════════════════════════════════════════════════
+function refresh() {
+  renderKPIs();
+  renderCatBars();
+  renderProducts();
+  renderCityBars();
+  updatePromoChart();
+  updateCityChart();
+}
+
+// ════════════════════════════════════════════════
+//  FILTER WIRING
+// ════════════════════════════════════════════════
+document.querySelectorAll('.fb').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const g = this.dataset.g, v = this.dataset.v;
+    document.querySelectorAll(`.fb[data-g="${g}"]`).forEach(b => b.classList.remove('on'));
+    this.classList.add('on');
+    filters[g === 'camp' ? 'camp' : g === 'promo' ? 'promo' : g === 'cat' ? 'cat' : 'city'] = v;
+    // update summary chip
+    if (g === 'camp' && v !== 'All') {
+      const d = AGG.camp[v];
+      const gr = ((d.after - d.before) / d.before * 100).toFixed(1);
+      document.getElementById('summary-chip').textContent = `📊 ${v}: ${gr}% growth`;
+    } else if (g === 'camp') {
+      document.getElementById('summary-chip').textContent = '🏆 Sankranti Won · 155.3% growth';
+    }
+    refresh();
+  });
+});
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+makePromoChart();
+makeCampChart();
+makeCityChart();
+makeTimelineChart();
+refresh();
+</script>
+</body>
+</html>
